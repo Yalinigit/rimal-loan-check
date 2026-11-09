@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rimal Bank Loan Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body { margin: 0; }
+[hidden] { display: none !important; }
+/* Layout: two-panel loan tool — details on the left, decision + explanation on the right; stacks on phones. */
+:root {
+  --bg: #F1F4F2; --surface: #FFFFFF; --sunk: #F5F7F6; --fg: #14212B; --muted: #55626B; --line: #DCE3E0;
+  --brand: #0F4C5C; --brand-fg: #FFFFFF; --brand-soft: #E3EEEC; --sand: #C9A46A;
+  --ok: #0F5C3A; --ok-bg: #E1F1E7; --bad: #8A3B12; --bad-bg: #FAE8DE;
+  --font-body: 'IBM Plex Sans', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-num: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0C1518; --surface: #142229; --sunk: #0F1B20; --fg: #E5ECEA; --muted: #9AABAF; --line: #253840;
+  --brand: #6DB8C7; --brand-fg: #061E24; --brand-soft: #18343B; --sand: #D8B77F;
+  --ok: #86D3A6; --ok-bg: #12301F; --bad: #F2A47F; --bad-bg: #3A1F13; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0C1518; --surface: #142229; --sunk: #0F1B20; --fg: #E5ECEA; --muted: #9AABAF; --line: #253840;
+  --brand: #6DB8C7; --brand-fg: #061E24; --brand-soft: #18343B; --sand: #D8B77F;
+  --ok: #86D3A6; --ok-bg: #12301F; --bad: #F2A47F; --bad-bg: #3A1F13; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 24px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 20px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.3px; text-wrap: balance; }
+.brand small { display: block; font-size: 13px; color: var(--muted); }
+.tag { font-size: 12px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
+
+.steps { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.steps b { color: var(--fg); font-weight: 600; }
+.steps .sep { color: var(--sand); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.panel h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); }
+
+.examples { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { font: inherit; font-size: 14px; font-weight: 500; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--sunk); color: var(--fg); cursor: pointer; }
+.chip:hover { border-color: var(--brand); }
+.chip[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--fg); }
+
+form { display: flex; flex-direction: column; gap: 16px; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 420px) { .fields { grid-template-columns: minmax(0, 1fr); } }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.field .box { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--sunk); padding: 0 12px; min-height: 46px; }
+.field .box:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.field .unit { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.field input, .field select { font: inherit; font-family: var(--font-num); font-size: 15px; font-variant-numeric: tabular-nums; border: none; background: transparent; color: var(--fg); width: 100%; min-width: 0; padding: 10px 6px; outline: none; }
+.field select { font-family: var(--font-body); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.error { font-size: 14px; color: var(--bad); margin: 0; }
+
+.btn { font: inherit; font-size: 16px; font-weight: 600; min-height: 50px; padding: 0 20px; border-radius: 12px; border: none; cursor: pointer; background: var(--brand); color: var(--brand-fg); }
+.btn:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn-ghost { font: inherit; font-size: 14px; font-weight: 600; min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--brand); background: transparent; color: var(--brand); cursor: pointer; }
+:focus-visible { outline: 3px solid var(--sand); outline-offset: 2px; }
+
+.result-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.lang { display: flex; background: var(--sunk); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+.lang button { font: inherit; font-size: 14px; font-weight: 600; min-height: 36px; padding: 0 14px; border: none; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+
+.verdict { display: flex; flex-direction: column; gap: 6px; }
+.badge { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.bad { background: var(--bad-bg); color: var(--bad); }
+.verdict p { margin: 0; font-size: 16px; }
+
+.checks { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.check { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+.check:first-child { border-top: none; }
+.check .icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.check.pass .icon { background: var(--ok-bg); color: var(--ok); }
+.check.fail .icon { background: var(--bad-bg); color: var(--bad); }
+.check .name { font-weight: 500; }
+.check .saw, .check .need { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 14px; text-align: end; white-space: nowrap; }
+.check.fail .saw { color: var(--bad); font-weight: 600; }
+.check.pass .saw { color: var(--ok); font-weight: 600; }
+.check .need { color: var(--muted); }
+.checks-head { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; gap: 12px; padding: 8px 14px; background: var(--sunk); font-size: 12px; color: var(--muted); }
+.checks-head span:nth-child(3), .checks-head span:nth-child(4) { text-align: end; }
+
+.explain { background: var(--sunk); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.explain-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.source { font-size: 12px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.source .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sand); }
+.source.ai .dot { background: var(--brand); }
+.explain-body { display: flex; flex-direction: column; gap: 8px; max-width: 62ch; }
+.explain-body p { margin: 0; }
+.explain-body ul { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 4px; }
+.status { font-size: 13px; color: var(--muted); margin: 0; }
+.status.warn { color: var(--bad); }
+
+.trust { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--muted); }
+.trust svg { flex-shrink: 0; margin-top: 2px; }
+
+footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+[dir="rtl"] .check .saw, [dir="rtl"] .check .need { text-align: start; }
+@media (prefers-reduced-motion: no-preference) { .explain-body { transition: opacity .2s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0F4C5C"></rect><path d="M5 21c4-5 7-5 11-1s7 4 11-1" fill="none" stroke="#E2C48F" stroke-width="2.4" stroke-linecap="round"></path><path d="M5 15c4-4 7-4 11-1s7 3 11-1" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.55"></path></svg>
+      <div><h1>Rimal Bank Loan Check</h1><small>Personal loan · instant decision with a plain-language reason</small></div>
+    </div>
+    <span class="tag">Demo · fictional bank</span>
+  </header>
+
+  <div class="steps" aria-label="How it works">
+    <span><b>1</b> You enter your numbers</span><span class="sep" aria-hidden="true">→</span>
+    <span><b>2</b> Fixed rules make the decision</span><span class="sep" aria-hidden="true">→</span>
+    <span><b>3</b> AI explains it, in English or Arabic</span>
+  </div>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="details-h">
+      <h2 id="details-h">Your details</h2>
+      <div class="examples">
+        <span class="note">Try an example:</span>
+        <button type="button" class="chip" id="ex-sara" aria-pressed="true">Sara · new to UAE</button>
+        <button type="button" class="chip" id="ex-omar" aria-pressed="false">Omar · settled</button>
+      </div>
+      <form id="form" novalidate>
+        <div class="fields">
+          <div class="field"><label for="salary">Monthly salary</label><div class="box"><input id="salary" inputmode="numeric" autocomplete="off"><span class="unit">AED</span></div></div>
+          <div class="field"><label for="existing">Existing monthly payments</label><div class="box"><input id="existing" inputmode="numeric" autocomplete="off"><span class="unit">AED</span></div></div>
+          <div class="field"><label for="amount">Loan amount</label><div class="box"><input id="amount" inputmode="numeric" autocomplete="off"><span class="unit">AED</span></div></div>
+          <div class="field"><label for="term">Term</label><div class="box"><select id="term"><option value="12">12 months</option><option value="24">24 months</option><option value="36">36 months</option><option value="48">48 months</option></select></div></div>
+          <div class="field"><label for="job">Months in current job</label><div class="box"><input id="job" inputmode="numeric" autocomplete="off"><span class="unit">months</span></div></div>
+          <div class="field"><label for="credit">Months of credit history</label><div class="box"><input id="credit" inputmode="numeric" autocomplete="off"><span class="unit">months</span></div></div>
+        </div>
+        <p class="note">Monthly payment uses an assumed 7% yearly rate for this demo. Existing payments means other loans, cards and car finance.</p>
+        <p class="error" id="form-error" hidden></p>
+        <button class="btn" type="submit" id="submit">Check my loan</button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="result-h" id="result" aria-live="polite">
+      <div class="result-head">
+        <h2 id="result-h">Decision</h2>
+        <div class="lang" role="group" aria-label="Explanation language">
+          <button type="button" id="lang-en" aria-pressed="true">EN</button>
+          <button type="button" id="lang-ar" aria-pressed="false">العربية</button>
+        </div>
+      </div>
+      <div id="result-body" dir="ltr" lang="en" style="display:flex;flex-direction:column;gap:18px">
+        <div class="verdict"><span class="badge" id="badge"></span><p id="summary"></p></div>
+        <div class="checks" id="checks"></div>
+        <div class="explain">
+          <div class="explain-head">
+            <span class="source" id="source"><span class="dot"></span><span id="source-text"></span></span>
+            <button type="button" class="btn-ghost" id="ai-btn"></button>
+          </div>
+          <div class="explain-body" id="explain-body"></div>
+          <p class="status" id="ai-status" hidden></p>
+        </div>
+        <div class="trust">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path></svg>
+          <span id="trust-text"></span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <span>Rimal Bank is fictional. Rules are simplified for a demo and are not financial advice.</span>
+    <span>Built in 48 Hours #1 · by Yalini</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var RATE = 0.07, DBR_LIMIT = 0.5, MIN_JOB = 6, MIN_CREDIT = 6;
+  var EXAMPLES = {
+    sara: { salary: 18000, existing: 8600, amount: 60000, term: 36, job: 3, credit: 4 },
+    omar: { salary: 25000, existing: 4000, amount: 80000, term: 48, job: 26, credit: 40 }
+  };
+  var T = {
+    en: {
+      approved: 'Approved', declined: 'Not approved this time',
+      sumOk: 'All 3 checks passed. Your monthly payment would be about AED {emi}.',
+      sumBad: '{n} of 3 checks did not pass. Each one can change.',
+      check: 'Check', saw: 'Yours', need: 'Needed',
+      dbr: 'Debt ratio', job: 'Time in job', credit: 'Credit history',
+      months: '{n} mo', atMost: '≤ 50%', atLeast: '≥ {n} mo',
+      std: 'Standard explanation', ai: 'Explained by AI', aiBtn: 'Explain with AI', aiAgain: 'Rewrite with AI',
+      thinking: 'Writing a personal explanation…', stop: 'Stop',
+      trust: 'Fixed rules made this decision. AI only explains it and cannot change it. Never used: nationality, gender, religion or age.',
+      nextH: 'What you can do next',
+      okBody: 'Your repayments would use {dbr}% of your salary, within the 50% limit. You have {job} months in your job and {credit} months of credit history.',
+      okNext: ['Keep your total monthly repayments under half of your salary.', 'Keep paying every bill and card on time.'],
+      badDbr: 'With this loan, your monthly repayments would use {dbr}% of your salary. The limit is 50%.',
+      badJob: 'You have {job} months in your current job. Rimal Bank needs at least 6.',
+      badCredit: 'Your credit history covers {credit} months. We need at least 6 to see how you repay.',
+      nDbrLoan: 'Borrow up to about AED {max} over {term} months to stay within the limit, or pay off part of an existing loan or card.',
+      nDbrNone: 'Lower your existing monthly payments first. Right now there is no room for a new loan under the 50% limit.',
+      nJob: 'Re-apply from {date}, when you will have 6 months in your job.',
+      nCredit: 'Pay every bill and card on time to build your record. You can check your credit report with the Al Etihad Credit Bureau (AECB).',
+      notAvail: 'AI explanation is not available here, so this is the standard explanation.',
+      limited: 'Too many requests just now. Try again in a minute.',
+      failed: 'The AI explanation could not be finished. Showing the standard explanation.',
+      langName: 'English'
+    },
+    ar: {
+      approved: 'تمت الموافقة', declined: 'لم تتم الموافقة هذه المرة',
+      sumOk: 'نجحت جميع الشروط الثلاثة. سيكون قسطك الشهري حوالي {emi} درهم.',
+      sumBad: 'لم ينجح {n} من 3 شروط. ويمكن لكل منها أن يتغير.',
+      check: 'الشرط', saw: 'وضعك', need: 'المطلوب',
+      dbr: 'نسبة الديون', job: 'مدة العمل', credit: 'السجل الائتماني',
+      months: '{n} شهر', atMost: '50٪ أو أقل', atLeast: '{n} أشهر أو أكثر',
+      std: 'شرح قياسي', ai: 'شرح بالذكاء الاصطناعي', aiBtn: 'اشرح بالذكاء الاصطناعي', aiAgain: 'أعد الكتابة بالذكاء الاصطناعي',
+      thinking: 'جارٍ كتابة شرح خاص بك…', stop: 'إيقاف',
+      trust: 'اتُّخذ هذا القرار بقواعد ثابتة. الذكاء الاصطناعي يشرحه فقط ولا يستطيع تغييره. لا نستخدم أبداً: الجنسية أو الجنس أو الدين أو العمر.',
+      nextH: 'ماذا يمكنك أن تفعل الآن',
+      okBody: 'ستستهلك أقساطك {dbr}٪ من راتبك، ضمن حد 50٪. لديك {job} شهراً في عملك و{credit} شهراً من السجل الائتماني.',
+      okNext: ['احرص على أن تبقى أقساطك الشهرية أقل من نصف راتبك.', 'استمر في سداد جميع الفواتير والبطاقات في موعدها.'],
+      badDbr: 'مع هذا القرض، ستستهلك أقساطك الشهرية {dbr}٪ من راتبك. الحد الأقصى هو 50٪.',
+      badJob: 'مدة عملك الحالي {job} أشهر. يشترط بنك رمال 6 أشهر على الأقل.',
+      badCredit: 'يغطي سجلك الائتماني {credit} أشهر. نحتاج 6 أشهر على الأقل لنعرف طريقة سدادك.',
+      nDbrLoan: 'اقترض حتى حوالي {max} درهم على {term} شهراً لتبقى ضمن الحد، أو سدّد جزءاً من قرض أو بطاقة حالية.',
+      nDbrNone: 'خفّض أقساطك الشهرية الحالية أولاً، فلا يوجد حالياً مجال لقرض جديد ضمن حد 50٪.',
+      nJob: 'يمكنك التقديم مجدداً من {date}، عندما تكمل 6 أشهر في عملك.',
+      nCredit: 'سدّد جميع الفواتير والبطاقات في موعدها لبناء سجلك. يمكنك الاطلاع على تقريرك الائتماني لدى شركة الاتحاد للمعلومات الائتمانية.',
+      notAvail: 'الشرح بالذكاء الاصطناعي غير متاح هنا، لذا هذا هو الشرح القياسي.',
+      limited: 'طلبات كثيرة حالياً. حاول مرة أخرى بعد دقيقة.',
+      failed: 'تعذّر إكمال الشرح بالذكاء الاصطناعي. نعرض الشرح القياسي.',
+      langName: 'Arabic'
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fieldIds = ['salary', 'existing', 'amount', 'term', 'job', 'credit'];
+  var lang = 'en', current = null, aiText = null, aiUsed = false, ctl = null, samplePromise = null;
+
+  function fill(s) {
+    fieldIds.forEach(function (k) { $(k).value = String(s[k]); });
+  }
+  function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+  function sub(str, map) { return str.replace(/\{(\w+)\}/g, function (_, k) { return map[k] != null ? map[k] : ''; }); }
+  function annuity(n) { var r = RATE / 12; return (1 - Math.pow(1 + r, -n)) / r; }
+  function addMonths(m) { var d = new Date(); d.setMonth(d.getMonth() + m); return d; }
+  function fmtDate(d, l) {
+    try { return d.toLocaleDateString(l === 'ar' ? 'ar-AE-u-nu-latn' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+    catch (e) { return d.toDateString(); }
+  }
+
+  function decide(x) {
+    var emi = x.amount / annuity(x.term);
+    var dbr = (x.existing + emi) / x.salary;
+    var room = DBR_LIMIT * x.salary - x.existing;
+    var max = room > 0 ? Math.floor(room * annuity(x.term) / 1000) * 1000 : 0;
+    var checks = {
+      dbr: dbr <= DBR_LIMIT + 1e-9,
+      job: x.job >= MIN_JOB,
+      credit: x.credit >= MIN_CREDIT
+    };
+    var wait = 0;
+    if (!checks.job) wait = Math.max(wait, MIN_JOB - x.job);
+    if (!checks.credit) wait = Math.max(wait, MIN_CREDIT - x.credit);
+    return {
+      input: x, emi: emi, dbrPct: Math.round(dbr * 100), max: max,
+      checks: checks, approved: checks.dbr && checks.job && checks.credit,
+      failed: ['dbr', 'job', 'credit'].filter(function (k) { return !checks[k]; }),
+      reapply: wait > 0 ? addMonths(wait) : null
+    };
+  }
+
+  function standardText(d, l) {
+    var t = T[l], x = d.input, vals = { dbr: d.dbrPct, job: x.job, credit: x.credit, max: fmt(d.max), term: x.term, date: d.reapply ? fmtDate(d.reapply, l) : '' };
+    var paras = [], next = [];
+    if (d.approved) {
+      paras.push(sub(t.okBody, vals));
+      next = t.okNext.slice();
+    } else {
+      if (!d.checks.dbr) { paras.push(sub(t.badDbr, vals)); next.push(sub(d.max > 0 ? t.nDbrLoan : t.nDbrNone, vals)); }
+      if (!d.checks.job) { paras.push(sub(t.badJob, vals)); next.push(sub(t.nJob, vals)); }
+      if (!d.checks.credit) { paras.push(sub(t.badCredit, vals)); next.push(sub(t.nCredit, vals)); }
+    }
+    return paras.join(' ') + '\n\n' + t.nextH + ':\n' + next.map(function (s) { return '- ' + s; }).join('\n');
+  }
+
+  function renderText(text) {
+    var body = $('explain-body');
+    body.textContent = '';
+    var list = null;
+    text.split('\n').forEach(function (raw) {
+      var line = raw.trim();
+      if (!line) { list = null; return; }
+      var m = line.match(/^(?:[-•*]|\d+[.)])\s+(.*)$/);
+      if (m) {
+        if (!list) { list = document.createElement('ul'); body.appendChild(list); }
+        var li = document.createElement('li'); li.textContent = m[1].replace(/\*\*/g, ''); list.appendChild(li);
+      } else {
+        list = null;
+        var p = document.createElement('p'); p.textContent = line.replace(/\*\*/g, '').replace(/^#+\s*/, '');
+        if (/:$/.test(line)) p.style.fontWeight = '600';
+        body.appendChild(p);
+      }
+    });
+  }
+
+  function setSource(isAi) {
+    var t = T[lang];
+    $('source').className = 'source' + (isAi ? ' ai' : '');
+    $('source-text').textContent = isAi ? t.ai : t.std;
+    $('ai-btn').textContent = isAi ? t.aiAgain : t.aiBtn;
+  }
+  function setStatus(msg, warn) {
+    var s = $('ai-status');
+    if (!msg) { s.hidden = true; s.textContent = ''; return; }
+    s.hidden = false; s.textContent = msg; s.className = 'status' + (warn ? ' warn' : '');
+  }
+
+  var ICON_OK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>';
+  var ICON_BAD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"></path></svg>';
+
+  function renderDecision() {
+    var d = current, t = T[lang], x = d.input;
+    var rb = $('result-body');
+    rb.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    rb.setAttribute('lang', lang);
+    var badge = $('badge');
+    badge.className = 'badge ' + (d.approved ? 'ok' : 'bad');
+    badge.innerHTML = (d.approved ? ICON_OK : ICON_BAD);
+    badge.appendChild(document.createTextNode(d.approved ? t.approved : t.declined));
+    $('summary').textContent = d.approved ? sub(t.sumOk, { emi: fmt(d.emi) }) : sub(t.sumBad, { n: d.failed.length });
+
+    var checks = $('checks');
+    checks.textContent = '';
+    var head = document.createElement('div'); head.className = 'checks-head';
+    ['', t.check, t.saw, t.need].forEach(function (s) { var sp = document.createElement('span'); sp.textContent = s; head.appendChild(sp); });
+    checks.appendChild(head);
+    [
+      ['dbr', d.dbrPct + '%', t.atMost],
+      ['job', sub(t.months, { n: x.job }), sub(t.atLeast, { n: MIN_JOB })],
+      ['credit', sub(t.months, { n: x.credit }), sub(t.atLeast, { n: MIN_CREDIT })]
+    ].forEach(function (row) {
+      var pass = d.checks[row[0]];
+      var el = document.createElement('div'); el.className = 'check ' + (pass ? 'pass' : 'fail');
+      var ic = document.createElement('span'); ic.className = 'icon'; ic.innerHTML = pass ? ICON_OK : ICON_BAD;
+      var nm = document.createElement('span'); nm.className = 'name'; nm.textContent = t[row[0]];
+      var sw = document.createElement('span'); sw.className = 'saw'; sw.textContent = row[1];
+      var nd = document.createElement('span'); nd.className = 'need'; nd.textContent = row[2];
+      el.appendChild(ic); el.appendChild(nm); el.appendChild(sw); el.appendChild(nd);
+      checks.appendChild(el);
+    });
+    $('trust-text').textContent = t.trust;
+    $('lang-en').setAttribute('aria-pressed', String(lang === 'en'));
+    $('lang-ar').setAttribute('aria-pressed', String(lang === 'ar'));
+  }
+
+  function showStandard() {
+    aiText = null;
+    renderText(standardText(current, lang));
+    setSource(false);
+  }
+
+  function buildPrompt(d, l) {
+    var x = d.input;
+    var facts = {
+      bank: 'Rimal Bank (fictional UAE bank, demo)',
+      product: 'Personal loan',
+      decision: d.approved ? 'APPROVED' : 'DECLINED',
+      monthly_salary_aed: x.salary,
+      existing_monthly_payments_aed: x.existing,
+      loan_amount_aed: x.amount,
+      term_months: x.term,
+      new_monthly_payment_aed: Math.round(d.emi),
+      debt_ratio_percent: d.dbrPct,
+      debt_ratio_limit_percent: 50,
+      months_in_job: x.job, months_in_job_required: MIN_JOB,
+      months_of_credit_history: x.credit, months_of_credit_history_required: MIN_CREDIT,
+      checks_failed: d.failed,
+      largest_loan_within_limit_aed: d.max,
+      earliest_reapply_date: d.reapply ? fmtDate(d.reapply, l) : null
+    };
+    return [
+      'You write the customer-facing explanation for a loan decision in a product demo.',
+      'The decision was ALREADY made by fixed rules. Do not change it, question it, or add new reasons.',
+      'Write in ' + T[l].langName + (l === 'ar' ? ' (Modern Standard Arabic, Western digits 0-9, address the customer as أنت).' : ' (plain, warm, second person).'),
+      'Rules: use only the facts below; mention the specific numbers; never mention nationality, gender, religion or age; no greetings, no sign-off, no markdown headings or bold; under 130 words.',
+      'Format exactly: one short paragraph explaining the decision. Then a line "' + T[l].nextH + ':". Then 2-3 lines starting with "- ", each a concrete step using the numbers (for example the largest loan within the limit or the re-apply date). If approved, give 2 short tips to stay in good standing instead.',
+      'If debt ratio failed and largest_loan_within_limit_aed is 0, say existing payments must come down first. Credit reports in the UAE come from the Al Etihad Credit Bureau (AECB).',
+      '',
+      'Facts (JSON):',
+      JSON.stringify(facts)
+    ].join('\n');
+  }
+
+  function getSample() {
+    if (!samplePromise) {
+      samplePromise = (window.claude && window.claude.use) ? window.claude.use('sample').catch(function () { return null; }) : Promise.resolve(null);
+    }
+    return samplePromise;
+  }
+
+  function explainWithAI() {
+    if (!current) return;
+    aiUsed = true;
+    if (ctl) ctl.abort();
+    var myCtl = new AbortController(); ctl = myCtl;
+    var t = T[lang], btn = $('ai-btn');
+    btn.disabled = true;
+    setStatus(t.thinking, false);
+    var started = false;
+    getSample().then(function (sample) {
+      if (myCtl.signal.aborted) return;
+      if (!sample) { btn.disabled = false; showStandard(); setStatus(t.notAvail, true); return; }
+      return sample(buildPrompt(current, lang), {
+        modelTier: 'quick',
+        signal: myCtl.signal,
+        onText: function (u) {
+          if (!started) { started = true; setSource(true); setStatus('', false); }
+          renderText(u.text);
+        }
+      }).then(function (res) {
+        if (ctl !== myCtl) return;
+        aiText = res.text; renderText(res.text); setSource(true); setStatus('', false);
+      }).catch(function (e) {
+        if (ctl !== myCtl) return;
+        var code = e && e.code;
+        if (code === 'cancelled') return;
+        showStandard();
+        if (code === 'rate_limited') setStatus(t.limited, true);
+        else if (code === 'not_granted' || code === 'sampling_disabled' || code === 'not_declared' || code === 'capability_disabled' || code === 'capability_removed') setStatus(t.notAvail, true);
+        else setStatus(t.failed, true);
+      });
+    }).then(function () { if (ctl === myCtl) btn.disabled = false; });
+  }
+
+  function readForm() {
+    var x = {}, ok = true;
+    fieldIds.forEach(function (k) {
+      var v = Number(String($(k).value).replace(/[, ]/g, ''));
+      if (!isFinite(v) || v < 0 || String($(k).value).trim() === '') ok = false;
+      x[k] = v;
+    });
+    if (ok && (x.salary <= 0 || x.amount <= 0)) ok = false;
+    return ok ? x : null;
+  }
+
+  function run(useAI) {
+    var x = readForm(), err = $('form-error');
+    if (!x) { err.hidden = false; err.textContent = 'Enter a number in every field. Salary and loan amount must be more than 0.'; return; }
+    err.hidden = true;
+    if (ctl) { ctl.abort(); ctl = null; }
+    $('ai-btn').disabled = false;
+    setStatus('', false);
+    current = decide(x);
+    renderDecision();
+    showStandard();
+    if (useAI) explainWithAI();
+  }
+
+  function pickExample(key) {
+    fill(EXAMPLES[key]);
+    $('ex-sara').setAttribute('aria-pressed', String(key === 'sara'));
+    $('ex-omar').setAttribute('aria-pressed', String(key === 'omar'));
+    run(false);
+  }
+
+  $('ex-sara').addEventListener('click', function () { pickExample('sara'); });
+  $('ex-omar').addEventListener('click', function () { pickExample('omar'); });
+  fieldIds.forEach(function (k) { $(k).addEventListener('input', function () { $('ex-sara').setAttribute('aria-pressed', 'false'); $('ex-omar').setAttribute('aria-pressed', 'false'); }); });
+  // Outside claude.ai there is no AI runtime: hide the AI button and use the standard explanation.
+  var aiPossible = !!(window.claude && window.claude.use);
+  if (!aiPossible) $('ai-btn').hidden = true;
+  $('form').addEventListener('submit', function (e) { e.preventDefault(); run(aiPossible); });
+  $('ai-btn').addEventListener('click', explainWithAI);
+  function setLang(l) {
+    if (l === lang || !current) return;
+    lang = l;
+    if (ctl) { ctl.abort(); ctl = null; }
+    $('ai-btn').disabled = false; setStatus('', false);
+    renderDecision();
+    showStandard();
+    if (aiUsed && aiPossible) explainWithAI();
+  }
+  $('lang-en').addEventListener('click', function () { setLang('en'); });
+  $('lang-ar').addEventListener('click', function () { setLang('ar'); });
+
+  pickExample('sara');
+})();
+</script>
+</body>
+</html>
