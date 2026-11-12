@@ -110,6 +110,21 @@ form { display: flex; flex-direction: column; gap: 16px; }
 .trust { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--muted); }
 .trust svg { flex-shrink: 0; margin-top: 2px; }
 
+.subhead { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); margin: 4px 0 0; }
+.model { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.model-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.model-score { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.model-score b { font-family: var(--font-num); font-size: 34px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.meter { position: relative; height: 10px; border-radius: 999px; background: var(--sunk); border: 1px solid var(--line); }
+.meter .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; }
+.meter .cut { position: absolute; top: -6px; bottom: -6px; width: 2px; background: var(--fg); }
+.meter-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.reasons { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.reason { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 12px; align-items: center; font-size: 14px; }
+.reason .bar { height: 8px; border-radius: 999px; }
+.reason .bar.up { background: var(--bad); } .reason .bar.down { background: var(--ok); }
+.model-note { font-size: 13px; color: var(--muted); margin: 0; }
+.model-insight { font-size: 14px; margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--brand-soft); }
 footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 [dir="rtl"] .check .saw, [dir="rtl"] .check .need { text-align: start; }
 @media (prefers-reduced-motion: no-preference) { .explain-body { transition: opacity .2s; } }
@@ -148,6 +163,14 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
           <div class="field"><label for="job">Months in current job</label><div class="box"><input id="job" inputmode="numeric" autocomplete="off"><span class="unit">months</span></div></div>
           <div class="field"><label for="credit">Months of credit history</label><div class="box"><input id="credit" inputmode="numeric" autocomplete="off"><span class="unit">months</span></div></div>
         </div>
+        <p class="subhead">Credit behaviour (used by the model)</p>
+        <div class="fields">
+          <div class="field"><label for="card">Card usage (balance ÷ limit)</label><div class="box"><input id="card" inputmode="numeric" autocomplete="off"><span class="unit">%</span></div></div>
+          <div class="field"><label for="openlines">Open loans and cards</label><div class="box"><input id="openlines" inputmode="numeric" autocomplete="off"><span class="unit">count</span></div></div>
+          <div class="field"><label for="late30">Paid 30–59 days late (last 2 yrs)</label><div class="box"><input id="late30" inputmode="numeric" autocomplete="off"><span class="unit">times</span></div></div>
+          <div class="field"><label for="late60">Paid 60+ days late (last 2 yrs)</label><div class="box"><input id="late60" inputmode="numeric" autocomplete="off"><span class="unit">times</span></div></div>
+          <div class="field"><label for="deps">Dependents</label><div class="box"><input id="deps" inputmode="numeric" autocomplete="off"><span class="unit">people</span></div></div>
+        </div>
         <p class="note">Monthly payment uses an assumed 7% yearly rate for this demo. Existing payments means other loans, cards and car finance.</p>
         <p class="error" id="form-error" hidden></p>
         <button class="btn" type="submit" id="submit">Check my loan</button>
@@ -165,6 +188,16 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       <div id="result-body" dir="ltr" lang="en" style="display:flex;flex-direction:column;gap:18px">
         <div class="verdict"><span class="badge" id="badge"></span><p id="summary"></p></div>
         <div class="checks" id="checks"></div>
+        <div class="model" id="model">
+          <div class="model-head"><span class="eyebrow" id="m-eyebrow"></span><span class="source"><span class="dot"></span><span id="m-tag"></span></span></div>
+          <div class="model-score"><b id="m-score"></b><span id="m-scorelabel"></span><span class="badge" id="m-chip"></span></div>
+          <div><div class="meter" aria-hidden="true"><span class="fill" id="m-fill"></span><span class="cut" id="m-cut"></span></div>
+            <div class="meter-legend"><span>0%</span><span id="m-cutlabel"></span><span>25%+</span></div></div>
+          <p class="subhead" id="m-reasons-h" style="margin:0"></p>
+          <ul class="reasons" id="m-reasons"></ul>
+          <p class="model-insight" id="m-insight" hidden></p>
+          <p class="model-note" id="m-note"></p>
+        </div>
         <div class="explain">
           <div class="explain-head">
             <span class="source" id="source"><span class="dot"></span><span id="source-text"></span></span>
@@ -183,7 +216,7 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
 
   <footer>
     <span>Rimal Bank is fictional. Rules are simplified for a demo and are not financial advice.</span>
-    <span>Built in 48 Hours #1 · by Yalini</span>
+    <span>Built in 48 Hours #1 and #2 · by Yalini</span>
   </footer>
 </div>
 
@@ -191,8 +224,8 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
 (function () {
   var RATE = 0.07, DBR_LIMIT = 0.5, MIN_JOB = 6, MIN_CREDIT = 6;
   var EXAMPLES = {
-    sara: { salary: 18000, existing: 8600, amount: 60000, term: 36, job: 3, credit: 4 },
-    omar: { salary: 25000, existing: 4000, amount: 80000, term: 48, job: 26, credit: 40 }
+    sara: { salary: 18000, existing: 8600, amount: 60000, term: 36, job: 3, credit: 4, card: 45, openlines: 3, late30: 0, late60: 0, deps: 1 },
+    omar: { salary: 25000, existing: 4000, amount: 80000, term: 48, job: 26, credit: 40, card: 20, openlines: 6, late30: 0, late60: 0, deps: 2 }
   };
   var T = {
     en: {
@@ -218,7 +251,14 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       notAvail: 'AI explanation is not available here, so this is the standard explanation.',
       limited: 'Too many requests just now. Try again in a minute.',
       failed: 'The AI explanation could not be finished. Showing the standard explanation.',
-      langName: 'English'
+      langName: 'English',
+      mEyebrow: 'Model view', mTag: 'Advises · does not decide', mScoreLabel: 'chance of serious default in 2 years',
+      mWithin: 'Within risk appetite', mAbove: 'Above risk appetite', mCut: 'appetite {c}', mReasonsH: 'What moved the score',
+      up: 'raises risk', down: 'lowers risk',
+      mNote: 'Scorecard trained on {n} real US borrowers (Kaggle, 2008–2011), AUC {auc}. Age is never an input. The rules above make the decision.',
+      mDisagreeLow: 'The model sees low risk, but it cannot see time in job or length of credit history. The rules can, and they decide.',
+      mDisagreeHigh: 'The rules pass, but the model sees higher risk. In a real bank this case would go to a person to review.',
+      feat: { card_usage: 'Card usage', debt_ratio: 'Debt ratio', income: 'Income', open_lines: 'Open loans and cards', dependents: 'Dependents', late_30_59: 'Late payments (30–59 days)', late_60_plus: 'Late payments (60+ days)' }
     },
     ar: {
       approved: 'تمت الموافقة', declined: 'لم تتم الموافقة هذه المرة',
@@ -243,12 +283,19 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       notAvail: 'الشرح بالذكاء الاصطناعي غير متاح هنا، لذا هذا هو الشرح القياسي.',
       limited: 'طلبات كثيرة حالياً. حاول مرة أخرى بعد دقيقة.',
       failed: 'تعذّر إكمال الشرح بالذكاء الاصطناعي. نعرض الشرح القياسي.',
-      langName: 'Arabic'
+      langName: 'Arabic',
+      mEyebrow: 'رأي النموذج', mTag: 'يُرشد · لا يقرّر', mScoreLabel: 'احتمال التعثر الجسيم خلال سنتين',
+      mWithin: 'ضمن حدود المخاطر', mAbove: 'أعلى من حدود المخاطر', mCut: 'الحد {c}', mReasonsH: 'ما الذي حرّك النتيجة',
+      up: 'يرفع المخاطر', down: 'يخفض المخاطر',
+      mNote: 'نموذج تقييم مدرَّب على {n} مقترض حقيقي في الولايات المتحدة (Kaggle، 2008–2011)، AUC {auc}. لا يُستخدم العمر أبداً. القواعد أعلاه هي التي تتخذ القرار.',
+      mDisagreeLow: 'يرى النموذج مخاطر منخفضة، لكنه لا يرى مدة العمل أو طول السجل الائتماني. القواعد تراها، وهي التي تقرّر.',
+      mDisagreeHigh: 'نجحت القواعد، لكن النموذج يرى مخاطر أعلى. في بنك حقيقي ستُحال هذه الحالة إلى موظف لمراجعتها.',
+      feat: { card_usage: 'استخدام البطاقة', debt_ratio: 'نسبة الديون', income: 'الدخل', open_lines: 'القروض والبطاقات المفتوحة', dependents: 'المُعالون', late_30_59: 'تأخر السداد (30–59 يوماً)', late_60_plus: 'تأخر السداد (60+ يوماً)' }
     }
   };
 
   var $ = function (id) { return document.getElementById(id); };
-  var fieldIds = ['salary', 'existing', 'amount', 'term', 'job', 'credit'];
+  var fieldIds = ['salary', 'existing', 'amount', 'term', 'job', 'credit', 'card', 'openlines', 'late30', 'late60', 'deps'];
   var lang = 'en', current = null, aiText = null, aiUsed = false, ctl = null, samplePromise = null;
 
   function fill(s) {
@@ -333,6 +380,51 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
   var ICON_OK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>';
   var ICON_BAD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"></path></svg>';
 
+  // Explainable scorecard exported from the #2 notebook (logistic regression). Each reason is that feature's exact share of the log-odds.
+  var SC = {"source":"Kaggle Give Me Some Credit (US, 2008-2011), borrowers with income recorded","rows_train":84187,"auc":0.839,"cutoff":0.0954,"approve_share":0.85,"intercept":-3.1648695265398814,"features":[{"key":"card_usage","mean":0.3345944337157637,"std":0.35673294434641273,"coef":0.6550206432860974},{"key":"debt_ratio","mean":0.31105670997180795,"std":0.3008432932270313,"coef":0.053867056476003844},{"key":"income","mean":8.493057221478518,"std":0.87511280488396,"coef":-0.057667689645099385},{"key":"open_lines","mean":2.1306146391343197,"std":0.5786176583630038,"coef":0.06566631810031179},{"key":"dependents","mean":0.8562010761756566,"std":1.1510901594581415,"coef":0.06372251376728048},{"key":"late_30_59","mean":0.14713602475176113,"std":0.3512584475554165,"coef":0.3301667372926254},{"key":"late_60_plus","mean":0.08312120539180705,"std":0.2892109543304462,"coef":0.45363399654537717}],"transform":{"debt_ratio":"log1p","income":"log","open_lines":"log1p","late_30_59":"log1p","late_60_plus":"log1p"},"usd_per_aed":0.27229407760381213};
+  function modelScore(d) {
+    var x = d.input, emi = d.emi;
+    var raw = { card_usage: Math.min(x.card / 100, 1.5), debt_ratio: Math.min((x.existing + emi) / x.salary, 5),
+      income: Math.min(Math.max(x.salary * SC.usd_per_aed, 100), 50000), open_lines: Math.min(x.openlines, 40),
+      dependents: Math.min(x.deps, 10), late_30_59: Math.min(x.late30, 10), late_60_plus: Math.min(x.late60, 10) };
+    var logit = SC.intercept, parts = [];
+    SC.features.forEach(function (f) {
+      var v = raw[f.key], tf = SC.transform[f.key];
+      if (tf === 'log1p') v = Math.log1p(v); else if (tf === 'log') v = Math.log(v);
+      var c = f.coef * (v - f.mean) / f.std; logit += c; parts.push({ key: f.key, c: c });
+    });
+    parts.sort(function (a, b) { return Math.abs(b.c) - Math.abs(a.c); });
+    return { p: 1 / (1 + Math.exp(-logit)), parts: parts };
+  }
+  function pct(v) { return (Math.round(v * 1000) / 10).toFixed(1) + '%'; }
+  function renderModel() {
+    var t = T[lang], m = modelScore(current), within = m.p <= SC.cutoff;
+    $('m-eyebrow').textContent = t.mEyebrow; $('m-tag').textContent = t.mTag;
+    $('m-score').textContent = pct(m.p); $('m-scorelabel').textContent = t.mScoreLabel;
+    var chip = $('m-chip'); chip.className = 'badge ' + (within ? 'ok' : 'bad'); chip.textContent = within ? t.mWithin : t.mAbove;
+    var scale = 0.25, f = $('m-fill'), cpos = Math.min(SC.cutoff / scale, 1) * 100;
+    f.style.width = Math.min(m.p / scale, 1) * 100 + '%'; f.style.background = within ? 'var(--ok)' : 'var(--bad)';
+    var cut = $('m-cut'); cut.style.left = lang === 'ar' ? '' : cpos + '%'; cut.style.right = lang === 'ar' ? cpos + '%' : '';
+    f.style.left = lang === 'ar' ? 'auto' : '0'; f.style.right = lang === 'ar' ? '0' : 'auto';
+    $('m-cutlabel').textContent = sub(t.mCut, { c: pct(SC.cutoff) });
+    $('m-reasons-h').textContent = t.mReasonsH;
+    var xi = current.input;
+    function shownVal(k) { return k === 'card_usage' ? Math.round(xi.card) + '%' : k === 'debt_ratio' ? current.dbrPct + '%' : k === 'income' ? 'AED ' + fmt(xi.salary) : k === 'open_lines' ? xi.openlines : k === 'dependents' ? xi.deps : k === 'late_30_59' ? xi.late30 : xi.late60; }
+    var ul = $('m-reasons'); ul.textContent = '';
+    var maxc = Math.max.apply(null, m.parts.slice(0, 3).map(function (q) { return Math.abs(q.c); })) || 1;
+    m.parts.slice(0, 3).forEach(function (q) {
+      var li = document.createElement('li'); li.className = 'reason';
+      var lab = document.createElement('span'); lab.textContent = t.feat[q.key] + ': ' + shownVal(q.key) + ' · ' + (q.c > 0 ? t.up : t.down);
+      var bar = document.createElement('span'); bar.className = 'bar ' + (q.c > 0 ? 'up' : 'down'); bar.style.width = Math.max(8, Math.abs(q.c) / maxc * 100) + '%';
+      li.appendChild(lab); li.appendChild(bar); ul.appendChild(li);
+    });
+    var ins = $('m-insight');
+    if (!current.approved && within) { ins.hidden = false; ins.textContent = t.mDisagreeLow; }
+    else if (current.approved && !within) { ins.hidden = false; ins.textContent = t.mDisagreeHigh; }
+    else ins.hidden = true;
+    $('m-note').textContent = sub(t.mNote, { n: SC.rows_train.toLocaleString('en-US'), auc: SC.auc.toFixed(2) });
+  }
+
   function renderDecision() {
     var d = current, t = T[lang], x = d.input;
     var rb = $('result-body');
@@ -364,6 +456,7 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       checks.appendChild(el);
     });
     $('trust-text').textContent = t.trust;
+    renderModel();
     $('lang-en').setAttribute('aria-pressed', String(lang === 'en'));
     $('lang-ar').setAttribute('aria-pressed', String(lang === 'ar'));
   }
