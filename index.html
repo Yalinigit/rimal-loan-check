@@ -125,6 +125,32 @@ form { display: flex; flex-direction: column; gap: 16px; }
 .reason .bar.up { background: var(--bad); } .reason .bar.down { background: var(--ok); }
 .model-note { font-size: 13px; color: var(--muted); margin: 0; }
 .model-insight { font-size: 14px; margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--brand-soft); }
+.check .via { display: block; font-size: 12px; font-weight: 500; color: var(--brand); }
+.of { border: 1px solid var(--brand); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; background: var(--brand-soft); }
+.of.on { background: var(--surface); }
+.of h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.of p { margin: 0; font-size: 14px; }
+.of-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.of-actions .btn { min-height: 42px; font-size: 15px; }
+.consent { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.consent dt { color: var(--muted); font-weight: 500; }
+.consent dd { margin: 0; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 520px) { .tiles { grid-template-columns: minmax(0, 1fr); } }
+.tile { background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.tile b { font-family: var(--font-num); font-size: 20px; font-variant-numeric: tabular-nums; color: var(--ok); }
+.tile span { font-size: 13px; color: var(--muted); }
+.plan { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.plan-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.plan-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.step { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.step:first-child { border-top: none; padding-top: 2px; }
+.when { align-self: start; font-size: 12px; font-weight: 600; text-align: center; padding: 5px 8px; border-radius: 999px; background: var(--sunk); border: 1px solid var(--line); }
+.when.now { background: var(--brand); color: var(--brand-fg); border-color: var(--brand); }
+.step .why { font-size: 13px; color: var(--muted); margin: 0; }
+.step .act { font-weight: 600; margin: 2px 0 0; }
+.step .eff { font-size: 13px; color: var(--ok); margin: 2px 0 0; font-weight: 500; }
+@media (max-width: 420px) { .step { grid-template-columns: minmax(0, 1fr); gap: 6px; } .when { justify-self: start; } }
 footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 [dir="rtl"] .check .saw, [dir="rtl"] .check .need { text-align: start; }
 @media (prefers-reduced-motion: no-preference) { .explain-body { transition: opacity .2s; } }
@@ -143,7 +169,8 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
   <div class="steps" aria-label="How it works">
     <span><b>1</b> You enter your numbers</span><span class="sep" aria-hidden="true">→</span>
     <span><b>2</b> Fixed rules make the decision</span><span class="sep" aria-hidden="true">→</span>
-    <span><b>3</b> AI explains it, in English or Arabic</span>
+    <span><b>3</b> AI explains it, in English or Arabic</span><span class="sep" aria-hidden="true">→</span>
+    <span><b>4</b> Open Finance and a dated plan show the way to yes</span>
   </div>
 
   <div class="grid">
@@ -188,6 +215,12 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       <div id="result-body" dir="ltr" lang="en" style="display:flex;flex-direction:column;gap:18px">
         <div class="verdict"><span class="badge" id="badge"></span><p id="summary"></p></div>
         <div class="checks" id="checks"></div>
+        <div class="of" id="of" hidden></div>
+        <div class="plan" id="plan" hidden>
+          <div class="plan-head"><span class="eyebrow" id="p-eyebrow"></span><button type="button" class="btn-ghost" id="p-try"></button></div>
+          <ol class="plan-list" id="p-list"></ol>
+          <p class="model-note" id="p-note"></p>
+        </div>
         <div class="model" id="model">
           <div class="model-head"><span class="eyebrow" id="m-eyebrow"></span><span class="source"><span class="dot"></span><span id="m-tag"></span></span></div>
           <div class="model-score"><b id="m-score"></b><span id="m-scorelabel"></span><span class="badge" id="m-chip"></span></div>
@@ -216,7 +249,7 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
 
   <footer>
     <span>Rimal Bank is fictional. Rules are simplified for a demo and are not financial advice.</span>
-    <span>Built in 48 Hours #1 and #2 · by Yalini</span>
+    <span>Built in 48 Hours #1, #2 and #3 · by Yalini</span>
   </footer>
 </div>
 
@@ -237,9 +270,10 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       months: '{n} mo', atMost: '≤ 50%', atLeast: '≥ {n} mo',
       std: 'Standard explanation', ai: 'Explained by AI', aiBtn: 'Explain with AI', aiAgain: 'Rewrite with AI',
       thinking: 'Writing a personal explanation…', stop: 'Stop',
-      trust: 'Fixed rules made this decision. AI only explains it and cannot change it. Never used: nationality, gender, religion or age.',
+      trust: 'Fixed rules made this decision. AI only explains it and cannot change it. Never used: nationality, gender, religion or age. Bank data is read only with your consent, only for this check.',
       nextH: 'What you can do next',
       okBody: 'Your repayments would use {dbr}% of your salary, within the 50% limit. You have {job} months in your job and {credit} months of credit history.',
+      okShort: 'Your repayments would use {dbr}% of your salary, within the 50% limit.',
       okNext: ['Keep your total monthly repayments under half of your salary.', 'Keep paying every bill and card on time.'],
       badDbr: 'With this loan, your monthly repayments would use {dbr}% of your salary. The limit is 50%.',
       badJob: 'You have {job} months in your current job. Rimal Bank needs at least 6.',
@@ -258,7 +292,32 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       mNote: 'Scorecard trained on {n} real US borrowers (Kaggle, 2008–2011), AUC {auc}. Age is never an input. The rules above make the decision.',
       mDisagreeLow: 'The model sees low risk, but it cannot see time in job or length of credit history. The rules can, and they decide.',
       mDisagreeHigh: 'The rules pass, but the model sees higher risk. In a real bank this case would go to a person to review.',
-      feat: { card_usage: 'Card usage', debt_ratio: 'Debt ratio', income: 'Income', open_lines: 'Open loans and cards', dependents: 'Dependents', late_30_59: 'Late payments (30–59 days)', late_60_plus: 'Late payments (60+ days)' }
+      feat: { card_usage: 'Card usage', debt_ratio: 'Debt ratio', income: 'Income', open_lines: 'Open loans and cards', dependents: 'Dependents', late_30_59: 'Late payments (30–59 days)', late_60_plus: 'Late payments (60+ days)' },
+      viaOF: 'Verified with Open Finance', salaryMo: '{n} mo salary', paidMo: '{n} mo paid on time',
+      ofOffH: 'Your bank account can fill this gap',
+      ofOffP: 'Your credit file is new, but your bank account already shows how you earn and pay. Share 12 months of salary, rent and bill payments, and Rimal will count them.',
+      ofShare: 'Share bank data', ofCancel: 'Cancel', ofAllow: 'Allow one-time access', ofStop: 'Stop sharing',
+      ofConsentH: 'Rimal Bank is asking to read your account',
+      cWho: 'Who', cWhoV: 'Rimal Bank (personal loans)',
+      cWhat: 'What', cWhatV: 'Salary deposits, rent payments, and utility and phone bills from the last 12 months',
+      cNot: 'Not shared', cNotV: 'Your balance, savings and all other spending',
+      cWhy: 'Why', cWhyV: 'This loan check only',
+      cHow: 'How long', cHowV: 'One-time read. Stop sharing at any time.',
+      ofSim: 'Simulated for this demo. Modelled on Al Tareq, the UAE Central Bank’s Open Finance consent layer.',
+      ofOnH: 'Bank data shared · last 12 months',
+      tSalary: 'months of salary, no gaps', tRent: 'rent payments on time', tBills: 'bills paid on time',
+      ofOnP: 'Rimal policy (demo): 6+ months of on-time rent and bills counts as credit history; 6+ months of steady salary, even across a job change, counts as time in work.',
+      okOF: 'Your bank data showed a steady salary and on-time rent and bills, so we counted it.',
+      pH: 'Your path to approval', pTry: 'Try this plan', pApplied: 'Plan applied: {list}. Check the new decision above.',
+      pNote: 'Dates are estimates from today. Model figures are the demo scorecard’s, not a promise of approval.',
+      now: 'Today', by: 'By {date}',
+      wDbr: 'Debt ratio {dbr}% (limit 50%)', aDbrA: 'Borrow up to AED {max} instead of AED {amount}', aDbrB: 'Or clear AED {cut}/month of existing payments, then the full AED {amount} fits', aDbrNone: 'Reduce existing payments by AED {cut}/month before applying', eDbr: 'Debt ratio back to 50% or less',
+      wJob: '{job} months in current job (needs 6)', aJobOF: 'Share your salary history with Open Finance', aJobWait: 'Or re-apply from {date} without sharing data', eJob: 'Time-in-work check passes',
+      wCredit: '{credit} months of credit history (needs 6)', aCreditOF: 'Share your rent and bill history with Open Finance', aCreditWait: 'Or keep paying on time and re-apply from {date}', eCredit: 'Credit-history check passes',
+      wCard: 'Card usage {card}% is the biggest driver of your score', wCard2: 'Card usage {card}% is raising your score', aCard: 'Bring card balances under 30% of your limits', eCard: 'Model risk {from} → {to}',
+      wLate: '{n} late payment(s) in the last 2 years', aLate: 'Pay every bill and card on time for 24 months', eLate: 'Model risk {from} → {to}',
+      cardCycles: '1–2 billing cycles',
+      apOF: 'shared bank data', apAmt: 'loan AED {max}', apCard: 'card usage 29%'
     },
     ar: {
       approved: 'تمت الموافقة', declined: 'لم تتم الموافقة هذه المرة',
@@ -269,9 +328,10 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       months: '{n} شهر', atMost: '50٪ أو أقل', atLeast: '{n} أشهر أو أكثر',
       std: 'شرح قياسي', ai: 'شرح بالذكاء الاصطناعي', aiBtn: 'اشرح بالذكاء الاصطناعي', aiAgain: 'أعد الكتابة بالذكاء الاصطناعي',
       thinking: 'جارٍ كتابة شرح خاص بك…', stop: 'إيقاف',
-      trust: 'اتُّخذ هذا القرار بقواعد ثابتة. الذكاء الاصطناعي يشرحه فقط ولا يستطيع تغييره. لا نستخدم أبداً: الجنسية أو الجنس أو الدين أو العمر.',
+      trust: 'اتُّخذ هذا القرار بقواعد ثابتة. الذكاء الاصطناعي يشرحه فقط ولا يستطيع تغييره. لا نستخدم أبداً: الجنسية أو الجنس أو الدين أو العمر. لا نطّلع على بياناتك البنكية إلا بموافقتك، ولهذا الطلب فقط.',
       nextH: 'ماذا يمكنك أن تفعل الآن',
       okBody: 'ستستهلك أقساطك {dbr}٪ من راتبك، ضمن حد 50٪. لديك {job} شهراً في عملك و{credit} شهراً من السجل الائتماني.',
+      okShort: 'ستستهلك أقساطك {dbr}٪ من راتبك، ضمن حد 50٪.',
       okNext: ['احرص على أن تبقى أقساطك الشهرية أقل من نصف راتبك.', 'استمر في سداد جميع الفواتير والبطاقات في موعدها.'],
       badDbr: 'مع هذا القرض، ستستهلك أقساطك الشهرية {dbr}٪ من راتبك. الحد الأقصى هو 50٪.',
       badJob: 'مدة عملك الحالي {job} أشهر. يشترط بنك رمال 6 أشهر على الأقل.',
@@ -290,13 +350,46 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       mNote: 'نموذج تقييم مدرَّب على {n} مقترض حقيقي في الولايات المتحدة (Kaggle، 2008–2011)، AUC {auc}. لا يُستخدم العمر أبداً. القواعد أعلاه هي التي تتخذ القرار.',
       mDisagreeLow: 'يرى النموذج مخاطر منخفضة، لكنه لا يرى مدة العمل أو طول السجل الائتماني. القواعد تراها، وهي التي تقرّر.',
       mDisagreeHigh: 'نجحت القواعد، لكن النموذج يرى مخاطر أعلى. في بنك حقيقي ستُحال هذه الحالة إلى موظف لمراجعتها.',
-      feat: { card_usage: 'استخدام البطاقة', debt_ratio: 'نسبة الديون', income: 'الدخل', open_lines: 'القروض والبطاقات المفتوحة', dependents: 'المُعالون', late_30_59: 'تأخر السداد (30–59 يوماً)', late_60_plus: 'تأخر السداد (60+ يوماً)' }
+      feat: { card_usage: 'استخدام البطاقة', debt_ratio: 'نسبة الديون', income: 'الدخل', open_lines: 'القروض والبطاقات المفتوحة', dependents: 'المُعالون', late_30_59: 'تأخر السداد (30–59 يوماً)', late_60_plus: 'تأخر السداد (60+ يوماً)' },
+      viaOF: 'تم التحقق عبر التمويل المفتوح', salaryMo: 'راتب {n} شهر', paidMo: '{n} شهر سداد منتظم',
+      ofOffH: 'حسابك البنكي يمكن أن يسدّ هذه الفجوة',
+      ofOffP: 'سجلك الائتماني جديد، لكن حسابك البنكي يُظهر بالفعل دخلك وطريقة سدادك. شارك 12 شهراً من الراتب والإيجار والفواتير، وسيأخذها بنك رمال في الاعتبار.',
+      ofShare: 'مشاركة البيانات البنكية', ofCancel: 'إلغاء', ofAllow: 'السماح بوصول لمرة واحدة', ofStop: 'إيقاف المشاركة',
+      ofConsentH: 'يطلب بنك رمال الاطلاع على حسابك',
+      cWho: 'الجهة', cWhoV: 'بنك رمال (القروض الشخصية)',
+      cWhat: 'البيانات', cWhatV: 'إيداعات الراتب ودفعات الإيجار وفواتير الخدمات والهاتف خلال آخر 12 شهراً',
+      cNot: 'لا تتم مشاركة', cNotV: 'رصيدك ومدخراتك وجميع مصاريفك الأخرى',
+      cWhy: 'الغرض', cWhyV: 'طلب القرض هذا فقط',
+      cHow: 'المدة', cHowV: 'قراءة لمرة واحدة. يمكنك إيقاف المشاركة في أي وقت.',
+      ofSim: 'محاكاة لهذا العرض التوضيحي، مستوحاة من «الطارق»، منصة الموافقة للتمويل المفتوح التابعة لمصرف الإمارات العربية المتحدة المركزي.',
+      ofOnH: 'تمت مشاركة البيانات البنكية · آخر 12 شهراً',
+      tSalary: 'شهراً من الراتب دون انقطاع', tRent: 'دفعات إيجار في موعدها', tBills: 'فواتير مدفوعة في موعدها',
+      ofOnP: 'سياسة رمال (للعرض): 6 أشهر أو أكثر من سداد الإيجار والفواتير في موعدها تُحتسب سجلاً ائتمانياً، و6 أشهر أو أكثر من راتب منتظم، حتى مع تغيير العمل، تُحتسب مدة عمل.',
+      okOF: 'أظهرت بياناتك البنكية راتباً منتظماً وسداداً للإيجار والفواتير في موعدها، فأخذناها في الاعتبار.',
+      pH: 'طريقك إلى الموافقة', pTry: 'جرّب هذه الخطة', pApplied: 'تم تطبيق الخطة: {list}. اطّلع على القرار الجديد أعلاه.',
+      pNote: 'التواريخ تقديرية من اليوم. أرقام النموذج من نموذج العرض التوضيحي، وليست وعداً بالموافقة.',
+      now: 'اليوم', by: 'بحلول {date}',
+      wDbr: 'نسبة الديون {dbr}٪ (الحد 50٪)', aDbrA: 'اقترض حتى {max} درهم بدلاً من {amount} درهم', aDbrB: 'أو سدّد {cut} درهم شهرياً من التزاماتك الحالية، وعندها يناسبك المبلغ كاملاً {amount} درهم', aDbrNone: 'خفّض التزاماتك الحالية بمقدار {cut} درهم شهرياً قبل التقديم', eDbr: 'تعود نسبة الديون إلى 50٪ أو أقل',
+      wJob: '{job} أشهر في العمل الحالي (المطلوب 6)', aJobOF: 'شارك سجل راتبك عبر التمويل المفتوح', aJobWait: 'أو قدّم مجدداً من {date} دون مشاركة البيانات', eJob: 'يتحقق شرط مدة العمل',
+      wCredit: '{credit} أشهر من السجل الائتماني (المطلوب 6)', aCreditOF: 'شارك سجل الإيجار والفواتير عبر التمويل المفتوح', aCreditWait: 'أو استمر في السداد في موعده وقدّم مجدداً من {date}', eCredit: 'يتحقق شرط السجل الائتماني',
+      wCard: 'استخدام البطاقة {card}٪ هو أكبر مؤثر في نتيجتك', wCard2: 'استخدام البطاقة {card}٪ يرفع نتيجة المخاطر', aCard: 'خفّض أرصدة البطاقات إلى أقل من 30٪ من حدودها', eCard: 'مخاطر النموذج {from} ← {to}',
+      wLate: '{n} تأخر في السداد خلال آخر سنتين', aLate: 'سدّد جميع الفواتير والبطاقات في موعدها لمدة 24 شهراً', eLate: 'مخاطر النموذج {from} ← {to}',
+      cardCycles: '1–2 دورة فوترة',
+      apOF: 'مشاركة البيانات البنكية', apAmt: 'قرض {max} درهم', apCard: 'استخدام البطاقة 29٪'
     }
   };
 
   var $ = function (id) { return document.getElementById(id); };
   var fieldIds = ['salary', 'existing', 'amount', 'term', 'job', 'credit', 'card', 'openlines', 'late30', 'late60', 'deps'];
   var lang = 'en', current = null, aiText = null, aiUsed = false, ctl = null, samplePromise = null;
+  var ofState = 'off', applied = null;
+  // Simulated Open Finance read (last 12 months). A real build would call the bank's Open Finance API after consent.
+  function simOF(x) {
+    var late = Math.min(x.late30 + x.late60, 4);
+    return { salaryMonths: 12, salary: x.salary, jobChangeAgo: x.job < 12 ? x.job : null,
+      rentOnTime: 12 - late, rentTotal: 12, billsOnTime: 24 - late, billsTotal: 24 };
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
   function fill(s) {
     fieldIds.forEach(function (k) { $(k).value = String(s[k]); });
@@ -315,16 +408,24 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
     var dbr = (x.existing + emi) / x.salary;
     var room = DBR_LIMIT * x.salary - x.existing;
     var max = room > 0 ? Math.floor(room * annuity(x.term) / 1000) * 1000 : 0;
+    var of = ofState === 'on' ? simOF(x) : null, via = {};
     var checks = {
       dbr: dbr <= DBR_LIMIT + 1e-9,
       job: x.job >= MIN_JOB,
       credit: x.credit >= MIN_CREDIT
     };
+    // Open Finance (demo policy): steady salary counts as time in work; on-time rent and bills count as credit history.
+    if (of && !checks.job && of.salaryMonths >= MIN_JOB) { checks.job = true; via.job = true; }
+    if (of && !checks.credit && of.rentOnTime >= MIN_CREDIT) { checks.credit = true; via.credit = true; }
     var wait = 0;
     if (!checks.job) wait = Math.max(wait, MIN_JOB - x.job);
     if (!checks.credit) wait = Math.max(wait, MIN_CREDIT - x.credit);
     return {
-      input: x, emi: emi, dbrPct: Math.round(dbr * 100), max: max,
+      input: x, emi: emi, dbrPct: Math.round(dbr * 100), max: max, of: of, via: via,
+      cut: Math.max(0, Math.ceil((x.existing + emi - DBR_LIMIT * x.salary) / 10) * 10),
+      rawFail: { job: x.job < MIN_JOB, credit: x.credit < MIN_CREDIT },
+      jobWait: x.job < MIN_JOB ? addMonths(MIN_JOB - x.job) : null,
+      creditWait: x.credit < MIN_CREDIT ? addMonths(MIN_CREDIT - x.credit) : null,
       checks: checks, approved: checks.dbr && checks.job && checks.credit,
       failed: ['dbr', 'job', 'credit'].filter(function (k) { return !checks[k]; }),
       reapply: wait > 0 ? addMonths(wait) : null
@@ -335,13 +436,14 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
     var t = T[l], x = d.input, vals = { dbr: d.dbrPct, job: x.job, credit: x.credit, max: fmt(d.max), term: x.term, date: d.reapply ? fmtDate(d.reapply, l) : '' };
     var paras = [], next = [];
     if (d.approved) {
-      paras.push(sub(t.okBody, vals));
+      paras.push(sub(d.via.job || d.via.credit ? t.okShort : t.okBody, vals));
       next = t.okNext.slice();
     } else {
       if (!d.checks.dbr) { paras.push(sub(t.badDbr, vals)); next.push(sub(d.max > 0 ? t.nDbrLoan : t.nDbrNone, vals)); }
       if (!d.checks.job) { paras.push(sub(t.badJob, vals)); next.push(sub(t.nJob, vals)); }
       if (!d.checks.credit) { paras.push(sub(t.badCredit, vals)); next.push(sub(t.nCredit, vals)); }
     }
+    if (d.via.job || d.via.credit) paras.push(t.okOF);
     return paras.join(' ') + '\n\n' + t.nextH + ':\n' + next.map(function (s) { return '- ' + s; }).join('\n');
   }
 
@@ -425,6 +527,113 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
     $('m-note').textContent = sub(t.mNote, { n: SC.rows_train.toLocaleString('en-US'), auc: SC.auc.toFixed(2) });
   }
 
+  function recompute() {
+    if (ctl) { ctl.abort(); ctl = null; }
+    $('ai-btn').disabled = false; setStatus('', false);
+    current = decide(current.input);
+    renderDecision();
+    showStandard();
+  }
+
+  function renderOF() {
+    var box = $('of'), t = T[lang], d = current;
+    if (!(d.rawFail.job || d.rawFail.credit) && ofState !== 'on') { box.hidden = true; return; }
+    box.hidden = false; box.textContent = ''; box.className = 'of' + (ofState === 'on' ? ' on' : '');
+    var acts = el('div', 'of-actions');
+    function button(label, cls, fn) { var b = el('button', cls, label); b.type = 'button'; b.addEventListener('click', fn); acts.appendChild(b); return b; }
+    if (ofState === 'off') {
+      box.appendChild(el('h3', null, t.ofOffH));
+      box.appendChild(el('p', null, t.ofOffP));
+      button(t.ofShare, 'btn', function () { ofState = 'consent'; renderOF(); $('of').querySelector('.btn').focus(); });
+      box.appendChild(acts);
+    } else if (ofState === 'consent') {
+      box.appendChild(el('h3', null, t.ofConsentH));
+      var dl = el('dl', 'consent');
+      [['cWho', 'cWhoV'], ['cWhat', 'cWhatV'], ['cNot', 'cNotV'], ['cWhy', 'cWhyV'], ['cHow', 'cHowV']].forEach(function (r) {
+        dl.appendChild(el('dt', null, t[r[0]])); dl.appendChild(el('dd', null, t[r[1]]));
+      });
+      box.appendChild(dl);
+      button(t.ofAllow, 'btn', function () { ofState = 'on'; recompute(); });
+      button(t.ofCancel, 'btn-ghost', function () { ofState = 'off'; renderOF(); });
+      box.appendChild(acts);
+      box.appendChild(el('p', 'model-note', t.ofSim));
+    } else {
+      var of = d.of;
+      box.appendChild(el('h3', null, t.ofOnH));
+      var tiles = el('div', 'tiles');
+      [[of.salaryMonths + '/12', t.tSalary], [of.rentOnTime + '/' + of.rentTotal, t.tRent], [of.billsOnTime + '/' + of.billsTotal, t.tBills]].forEach(function (r) {
+        var tl = el('div', 'tile'); tl.appendChild(el('b', null, r[0])); tl.appendChild(el('span', null, r[1])); tiles.appendChild(tl);
+      });
+      box.appendChild(tiles);
+      box.appendChild(el('p', 'model-note', t.ofOnP));
+      button(t.ofStop, 'btn-ghost', function () { ofState = 'off'; applied = null; recompute(); });
+      box.appendChild(acts);
+    }
+  }
+
+  function scoreWith(d, changes) {
+    return modelScore({ input: Object.assign({}, d.input, changes), emi: d.emi, dbrPct: d.dbrPct }).p;
+  }
+  function buildPlan(d, l) {
+    var t = T[l], x = d.input, steps = [], m = modelScore(d);
+    if (!d.checks.dbr) steps.push({ now: true, why: sub(t.wDbr, { dbr: d.dbrPct }),
+      act: d.max > 0 ? sub(t.aDbrA, { max: fmt(d.max), amount: fmt(x.amount) }) : sub(t.aDbrNone, { cut: fmt(d.cut) }),
+      alt: d.max > 0 ? sub(t.aDbrB, { cut: fmt(d.cut), amount: fmt(x.amount) }) : null, eff: t.eDbr });
+    if (!d.checks.job) steps.push({ now: true, why: sub(t.wJob, { job: x.job }), act: t.aJobOF,
+      alt: sub(t.aJobWait, { date: fmtDate(d.jobWait, l) }), eff: t.eJob });
+    if (!d.checks.credit) steps.push({ now: true, why: sub(t.wCredit, { credit: x.credit }), act: t.aCreditOF,
+      alt: sub(t.aCreditWait, { date: fmtDate(d.creditWait, l) }), eff: t.eCredit });
+    var cardPart = m.parts.filter(function (q) { return q.key === 'card_usage'; })[0];
+    if (x.card >= 30 && cardPart && cardPart.c > 0) {
+      var c2 = scoreWith(d, { card: 29 }), at = addMonths(2);
+      steps.push({ date: at, why: sub(m.parts[0].key === 'card_usage' ? t.wCard : t.wCard2, { card: Math.round(x.card) }),
+        act: t.aCard, alt: t.cardCycles, eff: sub(t.eCard, { from: pct(m.p), to: pct(c2) }) });
+    }
+    var late = x.late30 + x.late60;
+    if (late > 0) {
+      var l2 = scoreWith(d, { late30: 0, late60: 0 });
+      steps.push({ date: addMonths(24), why: sub(t.wLate, { n: late }), act: t.aLate, alt: null, eff: sub(t.eLate, { from: pct(m.p), to: pct(l2) }) });
+    }
+    return steps;
+  }
+
+  function renderPlan() {
+    var box = $('plan'), t = T[lang], d = current, list = $('p-list');
+    list.textContent = '';
+    $('p-eyebrow').textContent = t.pH;
+    if (d.approved) {
+      if (!applied) { box.hidden = true; return; }
+      box.hidden = false; $('p-try').hidden = true;
+      $('p-note').textContent = sub(t.pApplied, { list: applied.map(function (k) { return sub(t[k[0]], k[1]); }).join(' · ') });
+      return;
+    }
+    var steps = buildPlan(d, lang);
+    if (!steps.length) { box.hidden = true; return; }
+    box.hidden = false; $('p-try').hidden = false; $('p-try').textContent = t.pTry;
+    steps.forEach(function (s) {
+      var li = el('li', 'step');
+      li.appendChild(el('span', 'when' + (s.now ? ' now' : ''), s.now ? t.now : sub(t.by, { date: fmtDate(s.date, lang) })));
+      var body = el('div');
+      body.appendChild(el('p', 'why', s.why));
+      body.appendChild(el('p', 'act', s.act));
+      if (s.alt) body.appendChild(el('p', 'why', s.alt));
+      body.appendChild(el('p', 'eff', '→ ' + s.eff));
+      li.appendChild(body); list.appendChild(li);
+    });
+    $('p-note').textContent = t.pNote;
+  }
+
+  function applyPlan() {
+    var d = current, x = d.input, done = [];
+    if ((!d.checks.job || !d.checks.credit) && ofState !== 'on') { ofState = 'on'; done.push(['apOF', {}]); }
+    if (!d.checks.dbr && d.max > 0) { $('amount').value = String(d.max); done.push(['apAmt', { max: fmt(d.max) }]); }
+    if (x.card >= 30) { $('card').value = '29'; done.push(['apCard', {}]); }
+    run(false);
+    applied = done;
+    renderPlan();
+    $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function renderDecision() {
     var d = current, t = T[lang], x = d.input;
     var rb = $('result-body');
@@ -443,19 +652,22 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
     checks.appendChild(head);
     [
       ['dbr', d.dbrPct + '%', t.atMost],
-      ['job', sub(t.months, { n: x.job }), sub(t.atLeast, { n: MIN_JOB })],
-      ['credit', sub(t.months, { n: x.credit }), sub(t.atLeast, { n: MIN_CREDIT })]
+      ['job', d.via.job ? sub(t.salaryMo, { n: d.of.salaryMonths }) : sub(t.months, { n: x.job }), sub(t.atLeast, { n: MIN_JOB })],
+      ['credit', d.via.credit ? sub(t.paidMo, { n: d.of.rentOnTime }) : sub(t.months, { n: x.credit }), sub(t.atLeast, { n: MIN_CREDIT })]
     ].forEach(function (row) {
       var pass = d.checks[row[0]];
       var el = document.createElement('div'); el.className = 'check ' + (pass ? 'pass' : 'fail');
       var ic = document.createElement('span'); ic.className = 'icon'; ic.innerHTML = pass ? ICON_OK : ICON_BAD;
       var nm = document.createElement('span'); nm.className = 'name'; nm.textContent = t[row[0]];
+      if (d.via[row[0]]) { var v = document.createElement('span'); v.className = 'via'; v.textContent = t.viaOF; nm.appendChild(v); }
       var sw = document.createElement('span'); sw.className = 'saw'; sw.textContent = row[1];
       var nd = document.createElement('span'); nd.className = 'need'; nd.textContent = row[2];
       el.appendChild(ic); el.appendChild(nm); el.appendChild(sw); el.appendChild(nd);
       checks.appendChild(el);
     });
     $('trust-text').textContent = t.trust;
+    renderOF();
+    renderPlan();
     renderModel();
     $('lang-en').setAttribute('aria-pressed', String(lang === 'en'));
     $('lang-ar').setAttribute('aria-pressed', String(lang === 'ar'));
@@ -484,7 +696,11 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       months_of_credit_history: x.credit, months_of_credit_history_required: MIN_CREDIT,
       checks_failed: d.failed,
       largest_loan_within_limit_aed: d.max,
-      earliest_reapply_date: d.reapply ? fmtDate(d.reapply, l) : null
+      earliest_reapply_date: d.reapply ? fmtDate(d.reapply, l) : null,
+      open_finance_shared: !!d.of,
+      checks_passed_using_open_finance: Object.keys(d.via),
+      open_finance_summary: d.of ? { months_of_salary: d.of.salaryMonths, rent_paid_on_time: d.of.rentOnTime + '/' + d.of.rentTotal, bills_paid_on_time: d.of.billsOnTime + '/' + d.of.billsTotal } : null,
+      path_to_approval: d.approved ? [] : buildPlan(d, l).map(function (s) { return (s.now ? 'Today' : 'By ' + fmtDate(s.date, l)) + ': ' + s.act + (s.alt ? ' (' + s.alt + ')' : '') + ' -> ' + s.eff; })
     };
     return [
       'You write the customer-facing explanation for a loan decision in a product demo.',
@@ -492,6 +708,7 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       'Write in ' + T[l].langName + (l === 'ar' ? ' (Modern Standard Arabic, Western digits 0-9, address the customer as أنت).' : ' (plain, warm, second person).'),
       'Rules: use only the facts below; mention the specific numbers; never mention nationality, gender, religion or age; no greetings, no sign-off, no markdown headings or bold; under 130 words.',
       'Format exactly: one short paragraph explaining the decision. Then a line "' + T[l].nextH + ':". Then 2-3 lines starting with "- ", each a concrete step using the numbers (for example the largest loan within the limit or the re-apply date). If approved, give 2 short tips to stay in good standing instead.',
+      'If checks_passed_using_open_finance is not empty, say in one sentence that the customer\'s shared bank data (steady salary, on-time rent and bills) was counted. If DECLINED, base the next steps on path_to_approval, keeping its timing (today or the date).',
       'If debt ratio failed and largest_loan_within_limit_aed is 0, say existing payments must come down first. Credit reports in the UAE come from the Al Etihad Credit Bureau (AECB).',
       '',
       'Facts (JSON):',
@@ -565,6 +782,7 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
   }
 
   function pickExample(key) {
+    ofState = 'off'; applied = null;
     fill(EXAMPLES[key]);
     $('ex-sara').setAttribute('aria-pressed', String(key === 'sara'));
     $('ex-omar').setAttribute('aria-pressed', String(key === 'omar'));
@@ -573,7 +791,8 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
 
   $('ex-sara').addEventListener('click', function () { pickExample('sara'); });
   $('ex-omar').addEventListener('click', function () { pickExample('omar'); });
-  fieldIds.forEach(function (k) { $(k).addEventListener('input', function () { $('ex-sara').setAttribute('aria-pressed', 'false'); $('ex-omar').setAttribute('aria-pressed', 'false'); }); });
+  $('p-try').addEventListener('click', applyPlan);
+  fieldIds.forEach(function (k) { $(k).addEventListener('input', function () { applied = null; $('ex-sara').setAttribute('aria-pressed', 'false'); $('ex-omar').setAttribute('aria-pressed', 'false'); }); });
   // Outside claude.ai there is no AI runtime: hide the AI button and use the standard explanation.
   var aiPossible = !!(window.claude && window.claude.use);
   if (!aiPossible) $('ai-btn').hidden = true;

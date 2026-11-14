@@ -44,8 +44,26 @@ Two examples are built in: **Sara** (new to the UAE, declined) and **Omar** (set
 2. Install the **Live Server** extension.
 3. Right-click `index.html` → **Open with Live Server**.
 
+## Stage #3 · Open Finance + path to approval
+
+A reason only helps if the customer can act on it. Stage #3 turns every reason into **reason → action → timeline**.
+
+1. **Open Finance consent (simulated).** A thin-file customer can share 12 months of salary deposits, rent and bills. The consent screen covers who is asking, what data is read, what is *not* shared, why, and for how long. It is modelled on Al Tareq, the UAE Central Bank's Open Finance consent layer.
+2. **Alternative data counts (demo policy).** 6+ months of on-time rent and bills counts as credit history. 6+ months of steady salary, even across a job change, counts as time in work. Affordability (the 50% debt ratio) is never waived.
+3. **Your path to approval.** Each failed check and each model driver gets a concrete action, a date ("Today" or "By 15 Jan 2027") and its effect, such as "Model risk 3.7% → 2.7%" for bringing card usage under 30%.
+4. **Try this plan.** One click applies the plan and re-runs the decision. Sara goes from 3 failed checks to approved.
+
+| Decision | Why |
+|---|---|
+| Open Finance fills gaps, it never overrides affordability | It shows how someone pays; it does not make an unaffordable loan safe. |
+| Consent says what is *not* shared | Trust depends on knowing the limits, not just the scope. |
+| Every action has a date | "Improve your credit" is not actionable; "by 15 Jan" is. |
+| Model what-ifs on the plan | Shows the customer which change matters most. |
+
 ## What's next
 
+- [x] Open Finance data for thin-file customers (#3)
+- [x] Reason → action → timeline plan (#3)
 - [ ] Human review: let a customer ask a person to check the decision
 - [ ] Bank compliance view: an audit trail of every decision and explanation
 - [ ] Short survey: would UAE residents trust an AI explanation from their bank?
