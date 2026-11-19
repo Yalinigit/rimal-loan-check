@@ -70,7 +70,7 @@ An automated decision is only ready for a bank when a person can step in and whe
 2. **Model flags go to a person.** When the rules pass but the risk model sees risk above appetite (Layla), the application is not approved automatically. It is held and sent to the review queue.
 3. **Bank view.** A reviewer sees the queue, the case facts (checks, model drivers, Open Finance use, the customer's reason) and records an outcome with a reason code and a note.
 4. **Guardrail on overrides.** A reviewer can overturn a time-in-job or credit-history decline with evidence. Nobody can approve above the 50% debt ratio.
-5. **Audit trail.** Every decision, consent, explanation (the exact text shown), plan and review is logged in order, with who did it. Each entry stores a SHA-256 hash of its content plus the previous entry's hash, so a later edit breaks the chain. "Verify log" checks it, "Simulate tampering" shows it failing, and the log exports to CSV.
+5. **Audit trail.** Every decision, consent, explanation (the exact text shown), plan and review is logged in order, with who did it. Each entry stores a SHA-256 hash of its content plus the previous entry's hash, so a later edit breaks the chain. The latest hash and entry count are also pinned in a checkpoint held outside the log, so quietly deleting the newest entries is caught too: the chain left behind would still look clean, but it no longer reaches the checkpoint. "Verify log" checks both, "Simulate tampering" and "Simulate truncation" show each one failing, and the log exports to CSV.
 
 | Decision | Why |
 |---|---|
@@ -79,6 +79,7 @@ An automated decision is only ready for a bank when a person can step in and whe
 | Affordability cannot be overridden | Judgement belongs on evidence gaps, not on the limit that protects the customer. |
 | Log the exact explanation text | "What did we tell the customer?" is the first question in a complaint. |
 | Log consent scope, not bank transactions | An audit trail should not become a second copy of personal data. |
+| Pin the head hash outside the log | A hash chain proves nothing was edited, not that nothing is missing from the end. Added after a reader pointed out the gap. |
 | Track "declines overturned" | A rising override rate is the signal that a rule or the model needs tuning. |
 
 The design follows the principles in the UAE Central Bank's February 2026 guidance note on AI and machine learning in financial services: explainability, effective human oversight and accountability. It is a demo, not a compliance tool: cases and the log live in the browser tab and reset on refresh.

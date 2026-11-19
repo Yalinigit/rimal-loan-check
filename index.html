@@ -195,6 +195,10 @@ table.audit { border-collapse: collapse; width: 100%; min-width: 820px; font-siz
 .verify { font-size: 14px; margin: 0; padding: 10px 12px; border-radius: 10px; }
 .verify.ok { background: var(--ok-bg); color: var(--ok); }
 .verify.bad { background: var(--bad-bg); color: var(--bad); }
+.anchor { font-size: 13px; margin: 0; padding: 8px 12px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); }
+.anchor b { color: var(--fg); font-weight: 600; }
+.anchor .mono { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--fg); }
+.audit tr.missing td { background: var(--bad-bg); color: var(--bad); font-weight: 500; }
 .check-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 [dir="rtl"] .check .saw, [dir="rtl"] .check .need { text-align: start; }
@@ -321,10 +325,12 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
           <label class="check-toggle"><input type="checkbox" id="only-case"> Selected case only</label>
           <button type="button" class="btn-ghost" id="verify-btn">Verify log</button>
           <button type="button" class="btn-ghost" id="tamper">Simulate tampering</button>
+          <button type="button" class="btn-ghost" id="truncate">Simulate truncation</button>
           <button type="button" class="btn-ghost" id="export">Export CSV</button>
         </div>
       </div>
-      <p class="note">Every decision, consent, explanation and review is written here in order. Each entry stores a SHA-256 hash of its own content plus the hash of the entry before it, so a later edit breaks the chain. <span id="audit-count"></span></p>
+      <p class="note">Every decision, consent, explanation and review is written here in order. Each entry stores a SHA-256 hash of its own content plus the hash of the entry before it, so a later edit breaks the chain. The latest hash and entry count are also pinned outside the log, so deleting entries from the end is caught too. <span id="audit-count"></span></p>
+      <p class="anchor" id="anchor" role="note"></p>
       <p class="verify" id="verify" hidden role="status"></p>
       <div class="audit-wrap">
         <table class="audit">
@@ -510,6 +516,8 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
   var NAMES = { sara: 'Sara', omar: 'Omar', layla: 'Layla' }, who = 'sara';
   var RULES_V = 'RB-PL rules v1.0', MODEL_V = 'Scorecard v1', REVIEWER = 'Reviewer R-014 (demo)';
   var view = 'customer', cases = [], audit = [], selCase = null, decSeq = 0, caseSeq = 0, rvForm = false, tamper = null, brokenFrom = 0;
+  // Checkpoint held outside the log (in production: WORM storage or a compliance-owned store the app cannot rewrite).
+  var vault = { seq: 0, hash: null, ts: null }, cut = null, missing = null;
   var STATUS_EN = { approved: 'Approved', declined: 'Declined', referred: 'Referred to human review' };
   var OUT_EN = { upheld: 'Decline kept', approved: 'Approved by reviewer', declined: 'Declined by reviewer' };
   var ZERO = '0000000000000000000000000000000000000000000000000000000000000000';
@@ -558,7 +566,9 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       detail: detail || '', long: long || '', prev: audit.length ? audit[audit.length - 1].hash : ZERO };
     e.hash = sha256(entryString(e));
     audit.push(e);
-    if (!tamper) { brokenFrom = 0; $('verify').hidden = true; }
+    // The checkpoint only moves forward on a clean extension of what it last saw, so a shortened log can't reset it.
+    if (e.seq === vault.seq + 1 && e.prev === (vault.hash || ZERO)) vault = { seq: e.seq, hash: e.hash, ts: e.ts };
+    if (!tamper && !cut) { brokenFrom = 0; missing = null; $('verify').hidden = true; }
     if (view === 'bank') renderBank();
   }
   function checkFacts(d) {
@@ -749,6 +759,10 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
   function renderAudit() {
     var tb = $('audit-body'), only = $('only-case').checked && selCase; tb.textContent = '';
     var rows = audit.filter(function (e) { return !only || e.case === selCase.id || e.dec === selCase.dec; });
+    if (missing) {
+      var mr = el('tr', 'missing'), mc = el('td', null, 'Entries #' + missing.from + (missing.to > missing.from ? '–#' + missing.to : '') + ' missing. The checkpoint says the log reached #' + missing.to + '.');
+      mc.setAttribute('colspan', '7'); mr.appendChild(mc); tb.appendChild(mr);
+    }
     rows.slice().reverse().forEach(function (e) {
       var tr = el('tr'); if (brokenFrom && e.seq >= brokenFrom) tr.className = 'broken';
       tr.appendChild(el('td', 'mono', String(e.seq)));
@@ -763,6 +777,17 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       tb.appendChild(tr);
     });
     $('audit-count').textContent = 'Showing ' + rows.length + ' of ' + audit.length + ' entries, newest first.';
+    renderAnchor();
+  }
+  function renderAnchor() {
+    var a = $('anchor'); a.textContent = '';
+    if (!vault.seq) { a.appendChild(document.createTextNode('Checkpoint (held outside the log): nothing logged yet.')); return; }
+    a.appendChild(el('b', null, 'Checkpoint (held outside the log): '));
+    a.appendChild(document.createTextNode('entry #'));
+    a.appendChild(el('span', 'mono', String(vault.seq)));
+    a.appendChild(document.createTextNode(' · hash '));
+    a.appendChild(el('span', 'mono', vault.hash.slice(0, 10) + '…'));
+    a.appendChild(document.createTextNode(' · ' + fmtTime(vault.ts) + '. In a bank this would live in write-once storage the app cannot change.'));
   }
   function verifyLog() {
     brokenFrom = 0;
@@ -770,14 +795,22 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       var e = audit[i];
       if (e.prev !== (i ? audit[i - 1].hash : ZERO) || sha256(entryString(e)) !== e.hash) { brokenFrom = e.seq; break; }
     }
+    missing = null; var headBad = false;
+    if (!brokenFrom && vault.seq) {
+      if (audit.length < vault.seq) missing = { from: audit.length + 1, to: vault.seq };
+      else if (audit[vault.seq - 1].hash !== vault.hash) headBad = true;
+    }
     var v = $('verify'); v.hidden = false;
-    v.className = 'verify ' + (brokenFrom ? 'bad' : 'ok');
+    v.className = 'verify ' + (brokenFrom || missing || headBad ? 'bad' : 'ok');
     v.textContent = brokenFrom ? 'Chain broken at entry #' + brokenFrom + '. Its content no longer matches its hash, so this entry and everything after it cannot be trusted.'
-      : 'Chain intact. ' + audit.length + ' entries checked and every hash matches.';
+      : missing ? 'Log is shorter than the last checkpoint. The chain that is left looks clean, but the checkpoint says the log reached entry #' + vault.seq + ', so ' + (vault.seq - audit.length) + ' ' + (vault.seq - audit.length === 1 ? 'entry was' : 'entries were') + ' removed from the end.'
+      : headBad ? 'Entry #' + vault.seq + ' does not match the checkpoint hash, so the log was rewritten after the checkpoint was taken.'
+      : 'Chain intact. ' + audit.length + ' entries checked, every hash matches, and the latest entry matches the checkpoint.';
     renderAudit();
   }
   function toggleTamper() {
     if (!audit.length) return;
+    if (cut) undoTruncate();
     if (tamper) { audit[tamper.i].detail = tamper.detail; tamper = null; }
     else {
       // Edit the latest reviewer decision if there is one, otherwise the latest automated decision.
@@ -787,6 +820,18 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
       audit[i].detail = audit[i].detail.replace(/FAIL/g, 'pass') + ' [edited after the fact]';
     }
     $('tamper').textContent = tamper ? 'Undo tampering' : 'Simulate tampering';
+    verifyLog();
+  }
+  // Quietly delete the newest entries. The chain left behind is still valid; only the checkpoint shows the gap.
+  function undoTruncate() { Array.prototype.push.apply(audit, cut); cut = null; $('truncate').textContent = 'Simulate truncation'; }
+  function toggleTruncate() {
+    if (cut) undoTruncate();
+    else {
+      if (audit.length < 2) return;
+      if (tamper) { audit[tamper.i].detail = tamper.detail; tamper = null; $('tamper').textContent = 'Simulate tampering'; }
+      cut = audit.splice(audit.length - Math.min(2, audit.length - 1));
+      $('truncate').textContent = 'Undo truncation';
+    }
     verifyLog();
   }
   function exportCsv() {
@@ -1250,6 +1295,7 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
   $('view-bank').addEventListener('click', function () { setView('bank'); });
   $('verify-btn').addEventListener('click', verifyLog);
   $('tamper').addEventListener('click', toggleTamper);
+  $('truncate').addEventListener('click', toggleTruncate);
   $('export').addEventListener('click', exportCsv);
   $('only-case').addEventListener('change', renderAudit);
   $('p-try').addEventListener('click', applyPlan);
