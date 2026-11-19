@@ -760,7 +760,7 @@ footer { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; j
     var tb = $('audit-body'), only = $('only-case').checked && selCase; tb.textContent = '';
     var rows = audit.filter(function (e) { return !only || e.case === selCase.id || e.dec === selCase.dec; });
     if (missing) {
-      var mr = el('tr', 'missing'), mc = el('td', null, 'Entries #' + missing.from + (missing.to > missing.from ? '–#' + missing.to : '') + ' missing. The checkpoint says the log reached #' + missing.to + '.');
+      var mr = el('tr', 'missing'), mc = el('td', null, (missing.to > missing.from ? 'Entries #' + missing.from + '–#' + missing.to : 'Entry #' + missing.from) + ' missing. The checkpoint says the log reached #' + missing.to + '.');
       mc.setAttribute('colspan', '7'); mr.appendChild(mc); tb.appendChild(mr);
     }
     rows.slice().reverse().forEach(function (e) {
